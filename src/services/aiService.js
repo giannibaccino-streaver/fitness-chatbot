@@ -30,17 +30,16 @@ export const WELCOME_MESSAGE = {
  * @param {string} apiKey - Optional API key (if you want to pass it)
  * @returns {Promise<string>} The AI's response text
  */
-export async function sendMessageToAI(messages, apiKey = null) {
+export async function sendMessageToAI(messages) {
   try {
+    // Use serverless function endpoint instead of direct API call
+    const apiEndpoint = "/api/chat";
+
     const headers = {
       "Content-Type": "application/json",
     };
 
-    if (apiKey) {
-      headers["x-api-key"] = apiKey;
-    }
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch(apiEndpoint, {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -55,7 +54,10 @@ export async function sendMessageToAI(messages, apiKey = null) {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `API request failed with status ${response.status}`,
+      );
     }
 
     const data = await response.json();
@@ -66,9 +68,7 @@ export async function sendMessageToAI(messages, apiKey = null) {
     return reply;
   } catch (error) {
     console.error("AI Service Error:", error);
-    throw new Error(
-      error.message || "Signal lost. Check your connection and try again.",
-    );
+    throw new Error("Signal lost. Check your connection and try again.");
   }
 }
 
